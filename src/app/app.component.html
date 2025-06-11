@@ -1,107 +1,73 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterOutlet } from '@angular/router';
+<!-- Input Section -->
+<div class="input-section">
+  <label>Task:</label>
+  <input type="text" [(ngModel)]="tname" placeholder="Enter task name" />
 
-@Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet, CommonModule, FormsModule],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css',
-})
-export class AppComponent {
-  tname = '';
-  pri = '';
-  date = '';
-  status = 'All';
+  <label>Priority:</label>
+  <select [(ngModel)]="pri">
+    <option value="">Select</option>
+    <option>High</option>
+    <option>Medium</option>
+    <option>Low</option>
+  </select>
 
-  allTasks: {
-    name: string;
-    priority: string;
-    dueDate: string;
-    priorityBadge: string;
-    status: 'Pending' | 'Completed';
-    isOverdue: boolean;
-  }[] = [];
+  <label>Due Date:</label>
+  <input type="date" [(ngModel)]="date" />
 
-  get filteredTasks() {
-    let filtered = [...this.allTasks];
+  <button (click)="addTask()">Add Task</button>
+</div>
 
-    if (this.status === 'Completed') {
-      filtered = filtered.filter(task => task.status === 'Completed');
-    } else if (this.status === 'Pending') {
-      filtered = filtered.filter(task => task.status === 'Pending');
-    } else if (this.status === 'Overdue') {
-      filtered = filtered.filter(task => task.isOverdue && task.status === 'Pending');
-    } else if (this.status === 'High Priority') {
-      filtered = filtered.filter(task => task.priority === 'High');
-    } else if (this.status === 'Medium Priority') {
-      filtered = filtered.filter(task => task.priority === 'Medium');
-    } else if (this.status === 'Low Priority') {
-      filtered = filtered.filter(task => task.priority === 'Low');
-    }
+<!-- Filter & Summary -->
+<div class="filter-summary">
+  <label>Filter:</label>
+  <select [(ngModel)]="status">
+    <option value="All">All Tasks</option>
+    <option value="Completed">Completed</option>
+    <option value="Pending">Pending</option>
+    <option value="Overdue">Overdue</option>
+    <option value="High Priority">High Priority</option>
+    <option value="Medium Priority">Medium Priority</option>
+    <option value="Low Priority">Low Priority</option>
+  </select>
 
-    return filtered;
-  }
+  <p>
+    Total: {{ taskSummary.total }} |
+    ✅ Completed: {{ taskSummary.completed }} |
+    ⏳ Pending: {{ taskSummary.pending }} |
+    ⚠️ Overdue: {{ taskSummary.overdue }}
+  </p>
+</div>
 
-  get taskSummary() {
-    const total = this.allTasks.length;
-    const completed = this.allTasks.filter(task => task.status === 'Completed').length;
-    const pending = this.allTasks.filter(task => task.status === 'Pending').length;
-    const overdue = this.allTasks.filter(task => task.isOverdue && task.status === 'Pending').length;
-    return { total, completed, pending, overdue };
-  }
+<!-- Task List -->
+<ul *ngIf="filteredTasks.length > 0; else emptyState">
+  <li *ngFor="let task of filteredTasks; let i = index" [ngClass]="{
+        'high': task.priority === 'High',
+        'medium': task.priority === 'Medium',
+        'low': task.priority === 'Low',
+        'overdue': task.isOverdue && task.status === 'Pending',
+        'completed': task.status === 'Completed'
+      }">
+    <strong>{{ task.name }}</strong> |
+    Priority: {{ task.priority }} {{ task.priorityBadge }} |
+    Due: {{ task.dueDate }} |
+    Status: {{ task.status === 'Completed' ? '✔️ Completed' : '⏳ Pending' }}
 
-  addTask() {
-    if (!this.tname || !this.pri || !this.date) return;
+    <span *ngIf="task.isOverdue && task.status === 'Pending'">⚠️ Overdue!</span>
 
-    const badge = this.pri === 'High' ? '🔴' : this.pri === 'Medium' ? '🟠' : '🟢';
-    const isOverdue = new Date(this.date) < new Date();
+    <br />
+    <button (click)="toggleStatus(i)">
+      {{ task.status === 'Pending' ? 'Mark Completed' : 'Mark Pending' }}
+    </button>
+    <button (click)="deleteTask(i)">🗑️ Delete</button>
+  </li>
+</ul>
 
-    this.allTasks.push({
-      name: this.tname,
-      priority: this.pri,
-      dueDate: this.date,
-      priorityBadge: badge,
-      status: 'Pending',
-      isOverdue,
-    });
+<!-- Empty State -->
+<ng-template #emptyState>
+  <p>No tasks found.</p>
+</ng-template>
 
-    this.tname = '';
-    this.pri = '';
-    this.date = '';
-  }
-
-  toggleStatus(index: number) {
-    const task = this.filteredTasks[index];
-    const realIndex = this.allTasks.findIndex(
-      t =>
-        t.name === task.name &&
-        t.dueDate === task.dueDate &&
-        t.priority === task.priority
-    );
-
-    this.allTasks[realIndex].status =
-      this.allTasks[realIndex].status === 'Completed' ? 'Pending' : 'Completed';
-
-    this.allTasks[realIndex].isOverdue =
-      new Date(this.allTasks[realIndex].dueDate) < new Date() &&
-      this.allTasks[realIndex].status === 'Pending';
-  }
-
-  deleteTask(index: number) {
-    const task = this.filteredTasks[index];
-    this.allTasks = this.allTasks.filter(t => t !== task);
-  }
-
-  clearAll() {
-    const confirmed = confirm('Are you sure you want to delete all tasks?');
-    if (confirmed) {
-      this.allTasks = [];
-    }
-  }
-
-  filterTasks() {
-  }
-}
+<!-- Clear All -->
+<div *ngIf="taskSummary.total > 0">
+  <button (click)="clearAll()">Clear All Tasks</button>
+</div>
