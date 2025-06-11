@@ -1,0 +1,26 @@
+li {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.high {
+  color: red;
+}
+
+.medium {
+  color: orange;
+}
+
+.low {
+  color: green;
+}
+
+.completed {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.overdue {
+  background-color: #ffcccc;
+}
